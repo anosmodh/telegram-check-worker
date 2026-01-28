@@ -1,0 +1,5 @@
+{
+  "name": "telegram-check-worker",
+  "compatibility_date": "2026-01-28",
+  "main": "worker.js"
+}
