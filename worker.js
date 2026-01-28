@@ -10,7 +10,7 @@ export default {
       });
     }
 
-    const BOT_TOKEN = "PUT_BOT_TOKEN_HERE"; // ضع توكن البوت هنا
+    const BOT_TOKEN = "6510172067:AAF_JICJ4SKhjNMUifBV-Zl8Pir8Ia5X8UA"; // ضع توكن البوت هنا
     const CHANNEL = "@Dr_ag_on1";
 
     const tgUrl = `https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${CHANNEL}&user_id=${userId}`;
