@@ -1,0 +1,14 @@
+name = "telegram-check-worker"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+API_VERSION = "1.0"
+
+[build]
+upload.format = "service-worker"
+
+[[r2_buckets]]
+binding = "MY_BUCKET"
+bucket_name = "telegram-data"
+preview_bucket_name = "telegram-data-preview"
