@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram User Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        .status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .info-item {
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tab-container {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: color 0.3s;
+            position: relative;
+        }
+        
+        .tab.active {
+            color: #667eea;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Telegram Checker</h1>
+        <p class="subtitle">Verify Telegram users and check channel membership</p>
+        
+        <div class="tab-container">
+            <div class="tab active" onclick="switchTab(0)">User Check</div>
+            <div class="tab" onclick="switchTab(1)">User Info</div>
+            <div class="tab" onclick="switchTab(2)">Status</div>
+        </div>
+        
+        <!-- Tab 1: User Check -->
+        <div class="tab-content active" id="tab1">
+            <div class="form-group">
+                <label for="userId">User ID</label>
+                <input type="text" id="userId" placeholder="e.g., 123456789">
+            </div>
+            
+            <div class="form-group">
+                <label for="username">Username (Optional)</label>
+                <input type="text" id="username" placeholder="@username">
+            </div>
+            
+            <div class="form-group">
+                <label for="chatId">Chat ID (Optional)</label>
+                <input type="text" id="chatId" placeholder="-1001234567890">
+            </div>
+            
+            <button class="btn" onclick="checkUser()">🔍 Check User</button>
+        </div>
+        
+        <!-- Tab 2: User Info -->
+        <div class="tab-content" id="tab2">
+            <div class="form-group">
+                <label for="infoUserId">User ID or Username</label>
+                <input type="text" id="infoUserId" placeholder="123456789 or @username">
+            </div>
+            
+            <button class="btn" onclick="getUserInfo()">👤 Get User Info</button>
+        </div>
+        
+        <!-- Tab 3: Status -->
+        <div class="tab-content" id="tab3">
+            <button class="btn" onclick="getStatus()">🟢 Check Service Status</button>
+        </div>
+        
+        <div class="result" id="result">
+            <div class="status" id="statusIndicator"></div>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://telegram-check-worker.tryree33445566.workers.dev';
+        
+        function switchTab(tabIndex) {
+            // Update tabs
+            document.querySelectorAll('.tab').forEach((tab, index) => {
+                tab.classList.toggle('active', index === tabIndex);
+            });
+            
+            // Update content
+            document.querySelectorAll('.tab-content').forEach((content, index) => {
+                content.classList.toggle('active', index === tabIndex);
+            });
+            
+            // Clear result
+            hideResult();
+        }
+        
+        async function checkUser() {
+            const userId = document.getElementById('userId').value;
+            const username = document.getElementById('username').value;
+            const chatId = document.getElementById('chatId').value;
+            
+            if (!userId && !username) {
+                showResult('error', 'Please enter User ID or Username');
+                return;
+            }
+            
+            showLoading('Checking user...');
+            
+            try {
+                const response = await fetch(`${API_URL}/check`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId, username, chatId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const user = data.data.userInfo;
+                    const isMember = data.data.isMember;
+                    
+                    const html = `
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">User ID</div>
+                                <div class="info-value">${user.id}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Username</div>
+                                <div class="info-value">@${user.username}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Name</div>
+                                <div class="info-value">${user.firstName} ${user.lastName || ''}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Language</div>
+                                <div class="info-value">${user.languageCode}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Channel Member</div>
+                                <div class="info-value ${isMember ? 'success' : 'error'}">
+                                    ${isMember ? '✅ Yes' : '❌ No'}
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Check ID</div>
+                                <div class="info-value">${data.data.checkId}</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 12px; color: #666;">
+                            Checked at: ${new Date(data.data.timestamp).toLocaleString()}
+                        </div>
+                    `;
+                    
+                    showResult('success', 'User check completed', html);
+                } else {
+                    showResult('error', data.error || 'Check failed');
+                }
+            } catch (error) {
+                showResult('error', 'Network error: ' + error.message);
+            }
+        }
+        
+        async function getUserInfo() {
+            const input = document.getElementById('infoUserId').value;
+            
+            if (!input) {
+                showResult('error', 'Please enter User ID or Username');
+                return;
+            }
+            
+            const data = {};
+            if (input.startsWith('@')) {
+                data.username = input.substring(1);
+            } else if (!isNaN(input)) {
+                data.userId = input;
+            } else {
+                showResult('error', 'Invalid input. Use numeric ID or @username');
+                return;
+            }
+            
+            showLoading('Getting user info...');
+            
+            try {
+                const response = await fetch(`${API_URL}/user/info`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const user = result.data.userInfo;
+                    
+                    const html = `
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">User ID</div>
+                                <div class="info-value">${user.id}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Username</div>
+                                <div class="info-value">@${user.username}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Full Name</div>
+                                <div class="info-value">${user.firstName} ${user.lastName || ''}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Is Bot</div>
+                                <div class="info-value">${user.isBot ? '🤖 Yes' : '👤 No'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Language</div>
+                                <div class="info-value">${user.languageCode}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Premium</div>
+                                <div class="info-value">${user.isPremium ? '⭐ Yes' : 'No'}</div>
+                            </div>
+                        </div>
+                        ${user.isMock ? '<div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-radius: 5px; font-size: 12px;">Note: This is mock data for demonstration</div>' : ''}
+                        <div style="margin-top: 15px; font-size: 12px; color: #666;">
+                            Retrieved at: ${new Date(result.data.timestamp).toLocaleString()}
+                        </div>
+                    `;
+                    
+                    showResult('success', 'User information retrieved', html);
+                } else {
+                    showResult('error', result.error || 'Failed to get user info');
+                }
+            } catch (error) {
+                showResult('error', 'Network error: ' + error.message);
+            }
+        }
+        
+        async function getStatus() {
+            showLoading('Checking service status...');
+            
+            try {
+                const response = await fetch(`${API_URL}/status`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const status = data.data;
+                    
+                    const html = `
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">Status</div>
+                                <div class="info-value" style="color: #28a745;">🟢 ${status.status}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Version</div>
+                                <div class="info-value">${status.version}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Uptime</div>
+                                <div class="info-value">${status.uptime}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Timestamp</div>
+                                <div class="info-value">${new Date(status.timestamp).toLocaleTimeString()}</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    showResult('success', 'Service is online', html);
+                } else {
+                    showResult('error', 'Status check failed');
+                }
+            } catch (error) {
+                showResult('error', 'Service unavailable: ' + error.message);
+            }
+        }
+        
+        function showLoading(message) {
+            document.getElementById('statusIndicator').className = 'status';
+            document.getElementById('statusIndicator').textContent = message;
+            document.getElementById('resultContent').innerHTML = '<div style="text-align: center; padding: 20px;">⏳ Loading...</div>';
+            document.getElementById('result').classList.add('show');
+        }
+        
+        function showResult(type, message, content = '') {
+            const statusEl = document.getElementById('statusIndicator');
+            statusEl.className = `status ${type}`;
+            statusEl.textContent = message;
+            
+            document.getElementById('resultContent').innerHTML = content || '';
+            document.getElementById('result').classList.add('show');
+        }
+        
+        function hideResult() {
+            document.getElementById('result').classList.remove('show');
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Test connection
+            getStatus();
+        });
+    </script>
+</body>
+</html>
