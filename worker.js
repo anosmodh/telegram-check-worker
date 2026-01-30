@@ -299,12 +299,12 @@ function serveFrontend() {
         // Tab Switching
         function switchTab(tabName) {
             // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
+            document.querySelectorAll('.tab-content').forEach(function(tab) {
                 tab.classList.remove('active');
             });
             
             // Deactivate all buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => {
+            document.querySelectorAll('.tab-btn').forEach(function(btn) {
                 btn.classList.remove('active');
             });
             
@@ -312,7 +312,7 @@ function serveFrontend() {
             document.getElementById(tabName + 'Tab').classList.add('active');
             
             // Activate selected button
-            document.querySelectorAll('.tab-btn').forEach(btn => {
+            document.querySelectorAll('.tab-btn').forEach(function(btn) {
                 if (btn.querySelector('span').textContent.includes(getTabName(tabName))) {
                     btn.classList.add('active');
                 }
@@ -357,7 +357,7 @@ function serveFrontend() {
                 if (username) payload.username = username;
                 if (chatId) payload.chatId = chatId;
                 
-                const response = await fetch(`${API_BASE}/api/check`, {
+                const response = await fetch(API_BASE + '/api/check', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -371,39 +371,37 @@ function serveFrontend() {
                     const user = data.data.userInfo;
                     const isMember = data.data.isMember;
                     
-                    const resultHTML = \`
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <div class="info-label">رقم المستخدم</div>
-                                <div class="info-value">\${user.id}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">اسم المستخدم</div>
-                                <div class="info-value">@\${user.username}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">الاسم</div>
-                                <div class="info-value">\${user.firstName} \${user.lastName || ''}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">عضو في القناة</div>
-                                <div class="info-value" style="color: \${isMember ? '#10b981' : '#ef4444'}">
-                                    \${isMember ? '✅ نعم' : '❌ لا'}
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">اللغة</div>
-                                <div class="info-value">\${user.languageCode}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">معرف الفحص</div>
-                                <div class="info-value">\${data.data.checkId}</div>
-                            </div>
-                        </div>
-                        <div style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 8px;">
-                            <div style="font-size: 12px; color: #64748b;">تم الفحص في: \${new Date(data.data.timestamp).toLocaleString('ar-SA')}</div>
-                        </div>
-                    \`;
+                    const resultHTML = '<div class="info-grid">' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">رقم المستخدم</div>' +
+                            '<div class="info-value">' + user.id + '</div>' +
+                        '</div>' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">اسم المستخدم</div>' +
+                            '<div class="info-value">@' + user.username + '</div>' +
+                        '</div>' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">الاسم</div>' +
+                            '<div class="info-value">' + user.firstName + ' ' + (user.lastName || '') + '</div>' +
+                        '</div>' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">عضو في القناة</div>' +
+                            '<div class="info-value" style="color: ' + (isMember ? '#10b981' : '#ef4444') + '">' +
+                                (isMember ? '✅ نعم' : '❌ لا') +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">اللغة</div>' +
+                            '<div class="info-value">' + user.languageCode + '</div>' +
+                        '</div>' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">معرف الفحص</div>' +
+                            '<div class="info-value">' + data.data.checkId + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 8px;">' +
+                        '<div style="font-size: 12px; color: #64748b;">تم الفحص في: ' + new Date(data.data.timestamp).toLocaleString('ar-SA') + '</div>' +
+                    '</div>';
                     
                     showResult('تم الفحص بنجاح', resultHTML, 'success');
                 } else {
@@ -436,7 +434,7 @@ function serveFrontend() {
             showLoading('جارِ جلب معلومات المستخدم...');
             
             try {
-                const response = await fetch(\`\${API_BASE}/api/user/info\`, {
+                const response = await fetch(API_BASE + '/api/user/info', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -449,38 +447,36 @@ function serveFrontend() {
                 if (data.success) {
                     const user = data.data.userInfo;
                     
-                    const resultHTML = \`
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <div class="info-label">رقم المستخدم</div>
-                                <div class="info-value">\${user.id}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">اسم المستخدم</div>
-                                <div class="info-value">@\${user.username}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">الاسم الكامل</div>
-                                <div class="info-value">\${user.firstName} \${user.lastName || ''}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">هل هو بوت؟</div>
-                                <div class="info-value">\${user.isBot ? '🤖 نعم' : '👤 لا'}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">اللغة</div>
-                                <div class="info-value">\${user.languageCode}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">حساب مميز</div>
-                                <div class="info-value">\${user.isPremium ? '⭐ نعم' : 'لا'}</div>
-                            </div>
-                        </div>
-                        \${user.isMock ? '<div style="margin-top: 15px; padding: 12px; background: #fef3c7; border-radius: 8px; font-size: 14px; color: #92400e;">ملاحظة: هذه بيانات تجريبية للاختبار</div>' : ''}
-                        <div style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 8px;">
-                            <div style="font-size: 12px; color: #64748b;">تم الجلب في: \${new Date(data.data.timestamp).toLocaleString('ar-SA')}</div>
-                        </div>
-                    \`;
+                    const resultHTML = '<div class="info-grid">' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">رقم المستخدم</div>' +
+                            '<div class="info-value">' + user.id + '</div>' +
+                        '</div>' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">اسم المستخدم</div>' +
+                            '<div class="info-value">@' + user.username + '</div>' +
+                        '</div>' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">الاسم الكامل</div>' +
+                            '<div class="info-value">' + user.firstName + ' ' + (user.lastName || '') + '</div>' +
+                        '</div>' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">هل هو بوت؟</div>' +
+                            '<div class="info-value">' + (user.isBot ? '🤖 نعم' : '👤 لا') + '</div>' +
+                        '</div>' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">اللغة</div>' +
+                            '<div class="info-value">' + user.languageCode + '</div>' +
+                        '</div>' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">حساب مميز</div>' +
+                            '<div class="info-value">' + (user.isPremium ? '⭐ نعم' : 'لا') + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    (user.isMock ? '<div style="margin-top: 15px; padding: 12px; background: #fef3c7; border-radius: 8px; font-size: 14px; color: #92400e;">ملاحظة: هذه بيانات تجريبية للاختبار</div>' : '') +
+                    '<div style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 8px;">' +
+                        '<div style="font-size: 12px; color: #64748b;">تم الجلب في: ' + new Date(data.data.timestamp).toLocaleString('ar-SA') + '</div>' +
+                    '</div>';
                     
                     showResult('معلومات المستخدم', resultHTML, 'success');
                 } else {
@@ -504,10 +500,10 @@ function serveFrontend() {
             showLoading('جارِ التحقق من الرمز...');
             
             try {
-                const payload = { token };
+                const payload = { token: token };
                 if (userId) payload.userId = userId;
                 
-                const response = await fetch(\`\${API_BASE}/api/verify\`, {
+                const response = await fetch(API_BASE + '/api/verify', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -518,24 +514,22 @@ function serveFrontend() {
                 const data = await response.json();
                 
                 if (data.success) {
-                    const resultHTML = \`
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <div class="info-label">حالة التحقق</div>
-                                <div class="info-value" style="color: \${data.data.isValid ? '#10b981' : '#ef4444'}">
-                                    \${data.data.isValid ? '✅ صالح' : '❌ غير صالح'}
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">رقم المستخدم</div>
-                                <div class="info-value">\${data.data.userId || 'غير محدد'}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">وقت التحقق</div>
-                                <div class="info-value">\${new Date(data.data.verifiedAt).toLocaleString('ar-SA')}</div>
-                            </div>
-                        </div>
-                    \`;
+                    const resultHTML = '<div class="info-grid">' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">حالة التحقق</div>' +
+                            '<div class="info-value" style="color: ' + (data.data.isValid ? '#10b981' : '#ef4444') + '">' +
+                                (data.data.isValid ? '✅ صالح' : '❌ غير صالح') +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">رقم المستخدم</div>' +
+                            '<div class="info-value">' + (data.data.userId || 'غير محدد') + '</div>' +
+                        '</div>' +
+                        '<div class="info-item">' +
+                            '<div class="info-label">وقت التحقق</div>' +
+                            '<div class="info-value">' + new Date(data.data.verifiedAt).toLocaleString('ar-SA') + '</div>' +
+                        '</div>' +
+                    '</div>';
                     
                     showResult('نتيجة التحقق', resultHTML, data.data.isValid ? 'success' : 'error');
                 } else {
@@ -549,36 +543,33 @@ function serveFrontend() {
         // Check Status
         async function checkStatus() {
             try {
-                const response = await fetch(\`\${API_BASE}/api/status\`);
+                const response = await fetch(API_BASE + '/api/status');
                 const data = await response.json();
                 
                 if (data.success) {
-                    document.getElementById('apiStatus').innerHTML = \`
-                        <span style="color: #10b981;">🟢 يعمل</span><br>
-                        <small style="color: #64748b;">الإصدار: \${data.data.version}</small>
-                    \`;
+                    document.getElementById('apiStatus').innerHTML = 
+                        '<span style="color: #10b981;">🟢 يعمل</span><br>' +
+                        '<small style="color: #64748b;">الإصدار: ' + data.data.version + '</small>';
                     
                     if (currentTab === 'status') {
-                        const resultHTML = \`
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <div class="info-label">الحالة</div>
-                                    <div class="info-value" style="color: #10b981;">🟢 \${data.data.status}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">الإصدار</div>
-                                    <div class="info-value">\${data.data.version}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">وقت التشغيل</div>
-                                    <div class="info-value">\${data.data.uptime}</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">آخر تحديث</div>
-                                    <div class="info-value">\${new Date(data.data.timestamp).toLocaleTimeString('ar-SA')}</div>
-                                </div>
-                            </div>
-                        \`;
+                        const resultHTML = '<div class="info-grid">' +
+                            '<div class="info-item">' +
+                                '<div class="info-label">الحالة</div>' +
+                                '<div class="info-value" style="color: #10b981;">🟢 ' + data.data.status + '</div>' +
+                            '</div>' +
+                            '<div class="info-item">' +
+                                '<div class="info-label">الإصدار</div>' +
+                                '<div class="info-value">' + data.data.version + '</div>' +
+                            '</div>' +
+                            '<div class="info-item">' +
+                                '<div class="info-label">وقت التشغيل</div>' +
+                                '<div class="info-value">' + data.data.uptime + '</div>' +
+                            '</div>' +
+                            '<div class="info-item">' +
+                                '<div class="info-label">آخر تحديث</div>' +
+                                '<div class="info-value">' + new Date(data.data.timestamp).toLocaleTimeString('ar-SA') + '</div>' +
+                            '</div>' +
+                        '</div>';
                         
                         showResult('حالة الخدمة', resultHTML, 'success');
                     }
@@ -601,18 +592,18 @@ function serveFrontend() {
             showLoading('جارِ اختبار الاتصال...');
             
             try {
-                const response = await fetch(\`\${API_BASE}/api/test\`);
+                const response = await fetch(API_BASE + '/api/test');
                 const data = await response.json();
                 
                 if (data.success) {
-                    showResult('اختبار الاتصال', \`
-                        <div style="text-align: center; padding: 20px;">
-                            <div style="font-size: 48px; color: #10b981; margin-bottom: 20px;">✅</div>
-                            <h3 style="color: #059669;">الاتصال ناجح!</h3>
-                            <p>الرسالة: \${data.message}</p>
-                            <p style="color: #64748b; font-size: 14px; margin-top: 10px;">\${new Date(data.timestamp).toLocaleString('ar-SA')}</p>
-                        </div>
-                    \`, 'success');
+                    const resultHTML = '<div style="text-align: center; padding: 20px;">' +
+                        '<div style="font-size: 48px; color: #10b981; margin-bottom: 20px;">✅</div>' +
+                        '<h3 style="color: #059669;">الاتصال ناجح!</h3>' +
+                        '<p>الرسالة: ' + data.message + '</p>' +
+                        '<p style="color: #64748b; font-size: 14px; margin-top: 10px;">' + new Date(data.timestamp).toLocaleString('ar-SA') + '</p>' +
+                    '</div>';
+                    
+                    showResult('اختبار الاتصال', resultHTML, 'success');
                 } else {
                     showError('فشل اختبار الاتصال');
                 }
@@ -634,18 +625,17 @@ function serveFrontend() {
             document.getElementById('resultTitle').textContent = 'جارِ المعالجة...';
             document.getElementById('resultStatus').className = 'result-status status-loading';
             document.getElementById('resultStatus').textContent = 'جارِ التحميل';
-            document.getElementById('resultContent').innerHTML = \`
-                <div style="text-align: center; padding: 30px;">
-                    <div class="loader"></div>
-                    <p style="margin-top: 20px; color: #6b7280;">\${message}</p>
-                </div>
-            \`;
+            document.getElementById('resultContent').innerHTML = 
+                '<div style="text-align: center; padding: 30px;">' +
+                    '<div class="loader"></div>' +
+                    '<p style="margin-top: 20px; color: #6b7280;">' + message + '</p>' +
+                '</div>';
             document.getElementById('resultContainer').classList.add('show');
         }
         
-        function showResult(title, content, type = 'success') {
+        function showResult(title, content, type) {
             document.getElementById('resultTitle').textContent = title;
-            document.getElementById('resultStatus').className = \`result-status status-\${type}\`;
+            document.getElementById('resultStatus').className = 'result-status status-' + type;
             document.getElementById('resultStatus').textContent = type === 'success' ? 'ناجح' : 'خطأ';
             document.getElementById('resultContent').innerHTML = content;
             document.getElementById('resultContainer').classList.add('show');
@@ -661,12 +651,11 @@ function serveFrontend() {
             document.getElementById('resultTitle').textContent = 'حدث خطأ';
             document.getElementById('resultStatus').className = 'result-status status-error';
             document.getElementById('resultStatus').textContent = 'خطأ';
-            document.getElementById('resultContent').innerHTML = \`
-                <div style="text-align: center; padding: 30px;">
-                    <div style="font-size: 48px; color: #ef4444; margin-bottom: 20px;">❌</div>
-                    <h3 style="color: #dc2626;">\${message}</h3>
-                </div>
-            \`;
+            document.getElementById('resultContent').innerHTML = 
+                '<div style="text-align: center; padding: 30px;">' +
+                    '<div style="font-size: 48px; color: #ef4444; margin-bottom: 20px;">❌</div>' +
+                    '<h3 style="color: #dc2626;">' + message + '</h3>' +
+                '</div>';
             document.getElementById('resultContainer').classList.add('show');
         }
         
@@ -679,7 +668,7 @@ function serveFrontend() {
             const savedApiUrl = localStorage.getItem('apiUrl');
             if (savedApiUrl) {
                 document.getElementById('apiUrl').value = savedApiUrl;
-                API_BASE = savedApiUrl;
+                window.API_BASE = savedApiUrl;
             }
         }
         
@@ -687,7 +676,7 @@ function serveFrontend() {
             const apiUrl = document.getElementById('apiUrl').value.trim();
             if (apiUrl) {
                 localStorage.setItem('apiUrl', apiUrl);
-                API_BASE = apiUrl;
+                window.API_BASE = apiUrl;
                 alert('تم حفظ الإعدادات بنجاح');
             }
         }
@@ -703,7 +692,7 @@ function serveFrontend() {
   });
 }
 
-// Handle user check
+// باقي الدوال تبقى كما هي بدون تغيير...
 async function handleCheck(request) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -725,7 +714,6 @@ async function handleCheck(request) {
       });
     }
 
-    // Simulate Telegram API check
     const isMember = await checkTelegramMembership(userId, username, chatId);
     const userInfo = await getUserTelegramInfo(userId, username);
 
@@ -751,7 +739,6 @@ async function handleCheck(request) {
   }
 }
 
-// Handle verification
 async function handleVerify(request) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -796,7 +783,6 @@ async function handleVerify(request) {
   }
 }
 
-// Handle user info
 async function handleUserInfo(request) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -840,7 +826,6 @@ async function handleUserInfo(request) {
   }
 }
 
-// Handle status
 function handleStatus() {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -861,21 +846,13 @@ function handleStatus() {
   });
 }
 
-// Simulated Telegram API functions
 async function checkTelegramMembership(userId, username, chatId) {
-  // This is a simulated function
-  // In production, you would use the real Telegram Bot API
-  
-  // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 100));
-  
-  // Mock logic - 70% chance of being a member
   const random = Math.random();
   return random > 0.3;
 }
 
 async function getUserTelegramInfo(userId, username) {
-  // Simulate user info retrieval
   await new Promise(resolve => setTimeout(resolve, 150));
   
   const mockUsers = {
@@ -914,29 +891,24 @@ async function getUserTelegramInfo(userId, username) {
 }
 
 async function validateVerificationToken(token, userId) {
-  // Simulate token validation
   await new Promise(resolve => setTimeout(resolve, 200));
   
-  // Mock validation logic
   if (!token || token.length < 10) {
     return false;
   }
 
-  // Simple hash validation simulation
-  const expectedHash = `verify_${userId || 'unknown'}_${Math.floor(Date.now() / 3600000)}`;
+  const expectedHash = 'verify_' + (userId || 'unknown') + '_' + Math.floor(Date.now() / 3600000);
   const tokenHash = await simpleHash(token);
   const expectedTokenHash = await simpleHash(expectedHash);
 
   return tokenHash === expectedTokenHash;
 }
 
-// Helper functions
 function generateCheckId() {
   return 'chk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
 async function simpleHash(str) {
-  // Simple hash function for demo
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
