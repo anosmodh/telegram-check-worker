@@ -1,277 +1,289 @@
-// worker.js - Cloudflare Worker مع تحقق حقيقي من Telegram API
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
-})
+// worker.js - Telegram Bot Checker
+export default {
+  async fetch(request, env, ctx) {
+    // CORS headers
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    };
 
-// KV namespace لتخزين البيانات (اختياري)
-// const TELEGRAM_LINKS = 'TELEGRAM_LINKS'
+    // Handle OPTIONS request for CORS
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        headers: corsHeaders,
+      });
+    }
 
-async function handleRequest(request) {
-  const url = new URL(request.url)
+    const url = new URL(request.url);
+    const path = url.pathname;
+
+    try {
+      // API routes
+      if (path === '/check' && request.method === 'POST') {
+        return await handleCheck(request);
+      } else if (path === '/status' && request.method === 'GET') {
+        return handleStatus();
+      } else if (path === '/verify' && request.method === 'POST') {
+        return await handleVerify(request);
+      } else if (path === '/user/info' && request.method === 'POST') {
+        return await handleUserInfo(request);
+      } else {
+        return new Response('Welcome to Telegram Check API\n\nEndpoints:\n- POST /check\n- GET /status\n- POST /verify\n- POST /user/info', {
+          headers: { ...corsHeaders, 'Content-Type': 'text/plain' },
+        });
+      }
+    } catch (error) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: error.message
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  }
+};
+
+// Handle user check
+async function handleCheck(request) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json'
-  }
+  };
 
-  // معالجة CORS preflight
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
-  // المسار الرئيسي للتحقق
-  if (url.pathname === '/check' || url.pathname === '/') {
-    return await handleCheckRequest(request, url)
-  }
-
-  // مسار ربط حساب التليجرام
-  if (url.pathname === '/link' && request.method === 'POST') {
-    return await handleLinkRequest(request)
-  }
-
-  // مسار التحقق المباشر
-  if (url.pathname === '/verify' && request.method === 'POST') {
-    return await handleDirectVerify(request)
-  }
-
-  // صفحة المعلومات
-  return new Response(JSON.stringify({
-    service: "ANOS MOD Telegram Verifier",
-    version: "2.0",
-    endpoints: {
-      check: "GET /check?user_id=DEVICE_ID&telegram_id=TELEGRAM_ID",
-      link: "POST /link {device_id: '', telegram_id: ''}",
-      verify: "POST /verify {telegram_id: ''}"
-    },
-    note: "يجب الاشتراك في @Dr_ag_on1"
-  }), { headers: corsHeaders })
-}
-
-// ============ معالجة طلب التحقق ============
-async function handleCheckRequest(request, url) {
   try {
-    const params = url.searchParams
-    const deviceId = params.get('user_id') || params.get('device_id')
-    const telegramId = params.get('telegram_id')
-    const debug = params.get('debug') === 'true'
+    const data = await request.json();
+    const { userId, username, chatId } = data;
 
-    // 🔐 معلومات البوت والقناة (احتفظ بها سرية في الإنتاج)
-    const BOT_TOKEN = '6510172067:AAF_JICJ4SKhjNMUifBV-Zl8Pir8Ia5X8UA'
-    const CHANNEL_USERNAME = 'Dr_ag_on1' // بدون @
-
-    // 1. إذا كان هناك telegram_id، تحقق مباشرة
-    if (telegramId) {
-      const verification = await verifyTelegramSubscription(telegramId, BOT_TOKEN, CHANNEL_USERNAME)
-      
-      if (verification.verified) {
-        // ✅ مشترك
-        return jsonResponse({
-          success: true,
-          subscribed: true,
-          message: `✅ تم التحقق! أنت مشترك في @${CHANNEL_USERNAME}`,
-          username: verification.username,
-          telegram_id: telegramId,
-          channel: `@${CHANNEL_USERNAME}`,
-          timestamp: new Date().toISOString()
-        })
-      } else {
-        // ❌ غير مشترك
-        return jsonResponse({
-          success: true,
-          subscribed: false,
-          message: `❌ أنت غير مشترك في @${CHANNEL_USERNAME}`,
-          telegram_id: telegramId,
-          channel: `@${CHANNEL_USERNAME}`,
-          timestamp: new Date().toISOString(),
-          instructions: "1. اشترك في القناة 2. أعد فتح التطبيق"
-        })
-      }
-    }
-
-    // 2. إذا لم يكن هناك telegram_id، نطلب ربط الحساب
-    if (deviceId) {
-      // هنا يمكنك البحث في KV Storage عن telegram_id مرتبط بهذا deviceId
-      // const storedTelegramId = await TELEGRAM_LINKS.get(deviceId)
-      
-      // للمرة الأولى، نطلب ربط الحساب
-      return jsonResponse({
-        success: true,
-        subscribed: false,
-        message: "🔗 يرجى ربط حساب التليجرام أولاً",
-        device_id: deviceId,
-        instructions: [
-          "1. افتح التطبيق وانقر على 'ربط حساب التليجرام'",
-          "2. أرسل الرمز للبوت @ANOSMOD_bot",
-          "3. عد للتطبيق وأعد المحاولة"
-        ],
-        bot_username: "@ANOSMOD_bot",
-        channel: `@${CHANNEL_USERNAME}`,
-        timestamp: new Date().toISOString()
-      })
-    }
-
-    // 3. بدون بيانات كافية
-    return jsonResponse({
-      success: false,
-      subscribed: false,
-      message: "❌ يرجى تقديم معرف الجهاز (user_id)",
-      timestamp: new Date().toISOString()
-    }, 400)
-
-  } catch (error) {
-    console.error('Check error:', error)
-    return jsonResponse({
-      success: false,
-      subscribed: false,
-      message: `🚨 خطأ في السيرفر: ${error.message}`,
-      timestamp: new Date().toISOString()
-    }, 500)
-  }
-}
-
-// ============ معالجة طلب الربط ============
-async function handleLinkRequest(request) {
-  try {
-    const data = await request.json()
-    const { device_id, telegram_id, username } = data
-
-    if (!device_id || !telegram_id) {
-      return jsonResponse({
+    if (!userId && !username) {
+      return new Response(JSON.stringify({
         success: false,
-        message: "❌ device_id و telegram_id مطلوبان"
-      }, 400)
+        error: 'User ID or username is required'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // 🔐 تخزين في KV (Cloudflare KV Storage)
-    // await TELEGRAM_LINKS.put(device_id, JSON.stringify({
-    //   telegram_id,
-    //   username,
-    //   linked_at: new Date().toISOString()
-    // }))
+    // Simulate Telegram API check
+    const isMember = await checkTelegramMembership(userId, username, chatId);
+    const userInfo = await getUserTelegramInfo(userId, username);
 
-    return jsonResponse({
+    return new Response(JSON.stringify({
       success: true,
-      message: "✅ تم ربط الحساب بنجاح!",
-      device_id,
-      telegram_id,
-      username,
-      linked_at: new Date().toISOString(),
-      note: "يمكنك الآن التحقق من الاشتراك"
-    })
-
-  } catch (error) {
-    return jsonResponse({
-      success: false,
-      message: `❌ خطأ في الربط: ${error.message}`
-    }, 500)
-  }
-}
-
-// ============ تحقق مباشر ============
-async function handleDirectVerify(request) {
-  try {
-    const data = await request.json()
-    const { telegram_id } = data
-
-    if (!telegram_id) {
-      return jsonResponse({
-        success: false,
-        message: "❌ telegram_id مطلوب"
-      }, 400)
-    }
-
-    const BOT_TOKEN = '6510172067:AAF_JICJ4SKhjNMUifBV-Zl8Pir8Ia5X8UA'
-    const CHANNEL_USERNAME = 'Dr_ag_on1'
-
-    const verification = await verifyTelegramSubscription(telegram_id, BOT_TOKEN, CHANNEL_USERNAME)
-
-    return jsonResponse({
-      success: true,
-      subscribed: verification.verified,
-      message: verification.verified ? 
-        `✅ تم التحقق! مشترك في @${CHANNEL_USERNAME}` : 
-        `❌ غير مشترك في @${CHANNEL_USERNAME}`,
-      telegram_id,
-      username: verification.username,
-      status: verification.status,
-      channel: `@${CHANNEL_USERNAME}`,
-      timestamp: new Date().toISOString()
-    })
-
-  } catch (error) {
-    return jsonResponse({
-      success: false,
-      message: `❌ خطأ في التحقق: ${error.message}`
-    }, 500)
-  }
-}
-
-// ============ دالة التحقق من Telegram API ============
-async function verifyTelegramSubscription(userId, botToken, channelUsername) {
-  try {
-    const url = `https://api.telegram.org/bot${botToken}/getChatMember`
-    
-    const formData = new FormData()
-    formData.append('chat_id', `@${channelUsername}`)
-    formData.append('user_id', userId)
-
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData
-    })
-
-    if (!response.ok) {
-      throw new Error(`Telegram API error: ${response.status}`)
-    }
-
-    const data = await response.json()
-
-    if (!data.ok) {
-      return {
-        verified: false,
-        username: '',
-        status: 'error',
-        error: data.description || 'فشل التحقق'
+      data: {
+        isMember,
+        userInfo,
+        timestamp: new Date().toISOString(),
+        checkId: generateCheckId()
       }
-    }
-
-    const status = data.result.status
-    const username = data.result.user.username || ''
-    const firstName = data.result.user.first_name || ''
-
-    // الحالات التي تعتبر مشتركاً
-    const isMember = ['member', 'administrator', 'creator', 'restricted'].includes(status)
-
-    return {
-      verified: isMember,
-      username: username || firstName,
-      status: status,
-      user_info: {
-        id: data.result.user.id,
-        is_bot: data.result.user.is_bot || false,
-        language_code: data.result.user.language_code || 'ar'
-      }
-    }
-
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error('Telegram verification error:', error)
-    return {
-      verified: false,
-      username: '',
-      status: 'api_error',
+    return new Response(JSON.stringify({
+      success: false,
       error: error.message
-    }
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 }
 
-// ============ دالة مساعدة للردود JSON ============
-function jsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data, null, 2), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+// Handle verification
+async function handleVerify(request) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  try {
+    const data = await request.json();
+    const { token, userId } = data;
+
+    if (!token) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Verification token is required'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
-  })
+
+    const isValid = await validateVerificationToken(token, userId);
+
+    return new Response(JSON.stringify({
+      success: true,
+      data: {
+        isValid,
+        verifiedAt: new Date().toISOString(),
+        userId
+      }
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+// Handle user info
+async function handleUserInfo(request) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  try {
+    const data = await request.json();
+    const { userId, username } = data;
+
+    if (!userId && !username) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'User ID or username is required'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const userInfo = await getUserTelegramInfo(userId, username);
+
+    return new Response(JSON.stringify({
+      success: true,
+      data: {
+        userInfo,
+        timestamp: new Date().toISOString()
+      }
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+// Handle status
+function handleStatus() {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  return new Response(JSON.stringify({
+    success: true,
+    data: {
+      status: 'online',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime ? process.uptime() : 'unknown'
+    }
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+// Simulated Telegram API functions
+async function checkTelegramMembership(userId, username, chatId) {
+  // This is a simulated function
+  // In production, you would use the real Telegram Bot API
+  
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  // Mock logic - 70% chance of being a member
+  const random = Math.random();
+  return random > 0.3;
+}
+
+async function getUserTelegramInfo(userId, username) {
+  // Simulate user info retrieval
+  await new Promise(resolve => setTimeout(resolve, 150));
+  
+  const mockUsers = {
+    '123456789': {
+      id: 123456789,
+      username: username || 'test_user',
+      firstName: 'John',
+      lastName: 'Doe',
+      isBot: false,
+      languageCode: 'en'
+    },
+    '987654321': {
+      id: 987654321,
+      username: 'premium_user',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      isBot: false,
+      languageCode: 'en',
+      isPremium: true
+    }
+  };
+
+  if (userId && mockUsers[userId]) {
+    return mockUsers[userId];
+  }
+
+  return {
+    id: userId || Math.floor(Math.random() * 1000000000),
+    username: username || 'unknown',
+    firstName: 'User',
+    lastName: 'Unknown',
+    isBot: false,
+    languageCode: 'en',
+    isMock: true
+  };
+}
+
+async function validateVerificationToken(token, userId) {
+  // Simulate token validation
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  // Mock validation logic
+  if (!token || token.length < 10) {
+    return false;
+  }
+
+  // Simple hash validation simulation
+  const expectedHash = `verify_${userId || 'unknown'}_${Math.floor(Date.now() / 3600000)}`;
+  const tokenHash = await simpleHash(token);
+  const expectedTokenHash = await simpleHash(expectedHash);
+
+  return tokenHash === expectedTokenHash;
+}
+
+// Helper functions
+function generateCheckId() {
+  return 'chk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+async function simpleHash(str) {
+  // Simple hash function for demo
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(16);
 }
